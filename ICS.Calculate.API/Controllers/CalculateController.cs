@@ -1,3 +1,4 @@
+using ICS.Calculate.API.Model;
 using ICS.Calculate.API.Util;
 using ICS.Models.Builders;
 using ICS.Models.Enumerators;
@@ -111,7 +112,7 @@ namespace ICS.Calculate.API.Controllers
                 {
                     //calc1List.Add(finalAmount1);
                     JObject scenario1 = new JObject() {
-                        new JProperty("name", scenario1Name), new JProperty("data", finalAmount1)
+                        new JProperty("Name", scenario1Name), new JProperty("Data", finalAmount1)
                     };
                     dataList.Add(scenario1);
                 }
@@ -120,7 +121,7 @@ namespace ICS.Calculate.API.Controllers
                 {
                     //calc2List.Add(finalAmount2);
                     JObject scenario2 = new JObject() {
-                        new JProperty("name", scenario2Name), new JProperty("data", finalAmount2)
+                        new JProperty("Name", scenario2Name), new JProperty("Data", finalAmount2)
                     };
                     dataList.Add(scenario2);
                 }
@@ -129,14 +130,15 @@ namespace ICS.Calculate.API.Controllers
                 {
                     //calc3List.Add(finalAmount3);
                     JObject scenario3 = new JObject() {
-                        new JProperty("name", scenario3Name), new JProperty("data", finalAmount3)
+                        new JProperty("Name", scenario3Name), new JProperty("Data", finalAmount3)
                     };
                     dataList.Add(scenario3);
                 }
 
-                JObject series = new JObject() { new JProperty("series", dataList) };
+                JObject series = new JObject() { new JProperty("Series", dataList) };
 
-                return Ok(series);
+                //return Ok(JsonConvert.SerializeObject(series));
+                return Ok(series.ToObject<ResultCompare>());
             }
             catch (Exception e)
             {
@@ -144,41 +146,41 @@ namespace ICS.Calculate.API.Controllers
             }
         }        
 
-        [HttpGet("realprofitability")]
-        [AllowAnonymous]
-        public async Task<ActionResult> GetRealProfitability()
-        {
-            try
-            {
-                HttpClient request = new HttpClientBuilder().Host($"http://{_collectorAPIHost}").Port(_collectorAPIPort).Build();
-                var responseCollector = await request.GetAsync("collector/ipcatotal");
+        //[HttpGet("realprofitability")]
+        //[AllowAnonymous]
+        //public async Task<ActionResult> GetRealProfitability()
+        //{
+        //    try
+        //    {
+        //        HttpClient request = new HttpClientBuilder().Host($"http://{_collectorAPIHost}").Port(_collectorAPIPort).Build();
+        //        var responseCollector = await request.GetAsync("collector/ipcatotal");
 
-                var statusCode = responseCollector.StatusCode;
-                if (statusCode != System.Net.HttpStatusCode.OK)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, TxTResponses.GetTxTResponse(TxTResponse.Failure_GetIndicator));
-                }
+        //        var statusCode = responseCollector.StatusCode;
+        //        if (statusCode != System.Net.HttpStatusCode.OK)
+        //        {
+        //            return StatusCode(StatusCodes.Status500InternalServerError, TxTResponses.GetTxTResponse(TxTResponse.Failure_GetIndicator));
+        //        }
 
-                IpcaCalculated ipcaCalculated = JsonConvert.DeserializeObject<IpcaCalculated>(JToken.Parse(responseCollector.Content.ReadAsStringAsync().Result).ToString());
+        //        IpcaCalculated ipcaCalculated = JsonConvert.DeserializeObject<IpcaCalculated>(JToken.Parse(responseCollector.Content.ReadAsStringAsync().Result).ToString());
 
-                responseCollector = await request.GetAsync("collector/bbinvestiments");
-                statusCode = responseCollector.StatusCode;
+        //        responseCollector = await request.GetAsync("collector/bbinvestiments");
+        //        statusCode = responseCollector.StatusCode;
 
-                if (statusCode != System.Net.HttpStatusCode.OK)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, TxTResponses.GetTxTResponse(TxTResponse.Failure_GetIndicator));
-                }
+        //        if (statusCode != System.Net.HttpStatusCode.OK)
+        //        {
+        //            return StatusCode(StatusCodes.Status500InternalServerError, TxTResponses.GetTxTResponse(TxTResponse.Failure_GetIndicator));
+        //        }
 
-                Object bbInvestiments = JsonConvert.DeserializeObject<Object>(JToken.Parse(responseCollector.Content.ReadAsStringAsync().Result).ToString());
+        //        Object bbInvestiments = JsonConvert.DeserializeObject<Object>(JToken.Parse(responseCollector.Content.ReadAsStringAsync().Result).ToString());
 
 
-                return Ok(ipcaCalculated);
-            }
-            catch (Exception e)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, e.Message);
-            }
-        }
+        //        return Ok(JsonConvert.SerializeObject(ipcaCalculated));
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        return StatusCode(StatusCodes.Status500InternalServerError, e.Message);
+        //    }
+        //}
 
     }
 }
