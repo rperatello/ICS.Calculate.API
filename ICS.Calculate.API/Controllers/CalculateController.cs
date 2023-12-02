@@ -4,6 +4,7 @@ using ICS.Models.Enumerators;
 using ICS.Models.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
@@ -17,11 +18,13 @@ namespace ICS.Calculate.API.Controllers
     {
         private string _collectorAPIHost;
         private int _collectorAPIPort;
+        private readonly ILogger<CalculateController> _logger;
 
-        public CalculateController()
+        public CalculateController(ILogger<CalculateController> logger)
         {
             _collectorAPIHost = ComnunicationSettings.CollectorHost;
             _collectorAPIPort = ComnunicationSettings.CollectorPort;
+            _logger = logger;
         }
 
         [HttpPost("comparescenarios")]
@@ -31,9 +34,10 @@ namespace ICS.Calculate.API.Controllers
             try
             {
                 Debug.WriteLine($"{JsonConvert.SerializeObject(scenarios)}");
-
-                HttpClient request = new HttpClientBuilder().Host($"http://{_collectorAPIHost}").Port(_collectorAPIPort).Build();
-                var responseBCB = await request.GetAsync("collector/lastannualizedselic252");
+                HttpClient request = new HttpClientBuilder().Build();
+                string apiUrl = $"{_collectorAPIHost}:{_collectorAPIPort}/collector/lastannualizedselic252";
+                _logger.LogInformation(apiUrl);
+                var responseBCB = await request.GetAsync($"{_collectorAPIHost}:{_collectorAPIPort}/collector/lastannualizedselic252");
 
                 var statusCode = responseBCB.StatusCode;
                 if (statusCode != System.Net.HttpStatusCode.OK)
@@ -43,7 +47,11 @@ namespace ICS.Calculate.API.Controllers
 
                 Selic selic = JsonConvert.DeserializeObject<Selic>(JToken.Parse(responseBCB.Content.ReadAsStringAsync().Result).ToString());
 
-                var responseIBGE = await request.GetAsync("collector/lastannualavarageipca");
+                string apiUrl2 = $"{_collectorAPIHost}:{_collectorAPIPort}/collector/lastannualavarageipca";
+
+                _logger.LogInformation(apiUrl2);
+
+                var responseIBGE = await request.GetAsync(apiUrl2);
                 statusCode = responseIBGE.StatusCode;
 
                 if (statusCode != System.Net.HttpStatusCode.OK)
@@ -61,7 +69,6 @@ namespace ICS.Calculate.API.Controllers
                 string scenario1Name = scenarios?.stage1?.investment ?? "";
                 string scenario2Name = scenarios?.stage2?.investment ?? "";
                 string scenario3Name = scenarios?.stage3?.investment ?? "";
-
 
                 int days = Util.Calculate.InvestimentDays(scenarios.deadline);
 
@@ -129,14 +136,13 @@ namespace ICS.Calculate.API.Controllers
 
                 JObject series = new JObject() { new JProperty("series", dataList) };
 
-                return Ok(JsonConvert.SerializeObject(series));
+                return Ok(series);
             }
             catch (Exception e)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, e.Message);
             }
-        }
-        
+        }        
 
         [HttpGet("realprofitability")]
         [AllowAnonymous]
@@ -166,14 +172,13 @@ namespace ICS.Calculate.API.Controllers
                 Object bbInvestiments = JsonConvert.DeserializeObject<Object>(JToken.Parse(responseCollector.Content.ReadAsStringAsync().Result).ToString());
 
 
-                return Ok(JsonConvert.SerializeObject(ipcaCalculated));
+                return Ok(ipcaCalculated);
             }
             catch (Exception e)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, e.Message);
             }
         }
-
 
     }
 }
